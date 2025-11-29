@@ -1,0 +1,8 @@
+{
+  "name": "Luxe Birthday Wish",
+  "description": "A premium interactive birthday experience with dynamic animations and personalized photo features.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
