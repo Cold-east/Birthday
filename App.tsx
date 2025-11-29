@@ -4,9 +4,31 @@ import { NameEntry } from './components/NameEntry';
 import { Intro } from './components/Intro';
 import { CameraStage } from './components/CameraStage';
 import { Celebration } from './components/Celebration';
-import { CreatorSetup } from './components/CreatorSetup';
-import { initDB, saveMedia, getMedia } from './utils/db';
 import { Loader2 } from 'lucide-react';
+
+// ==========================================
+// 👇 PASTE YOUR LINKS INSIDE THE QUOTES BELOW 👇
+// ==========================================
+
+const HARDCODED_MEDIA = {
+  // 1. Your Birthday Video URL (must be .mp4 or direct video link)
+  videoUrl: "https://res.cloudinary.com/dvbhqaqad/video/upload/v1764408883/lv_0_20251129085500_fuxj6z.mp4", 
+  
+  // 2. Your Background Music URL (must be .mp3)
+  audioUrl: "https://res.cloudinary.com/dvbhqaqad/video/upload/v1764410061/James_Arthur_-_Say_You_Won_t_Let_Go_q5wnkd.mp3",
+
+  // 3. Your 6 Background Photos (must be direct image links)
+  collagePhotos: [
+    "https://res.cloudinary.com/dvbhqaqad/image/upload/v1764410208/WhatsApp_Image_2025-11-29_at_10.21.15_3_qyaebm.jpg",
+    "https://res.cloudinary.com/dvbhqaqad/image/upload/v1764410208/WhatsApp_Image_2025-11-29_at_10.21.41_rarg1k.jpg",
+    "https://res.cloudinary.com/dvbhqaqad/image/upload/v1764410208/WhatsApp_Image_2025-11-29_at_10.21.39_zkulnu.jpg",
+    "https://res.cloudinary.com/dvbhqaqad/image/upload/v1764410207/WhatsApp_Image_2025-11-29_at_10.21.15_2_ynjyoo.jpg",
+    "https://res.cloudinary.com/dvbhqaqad/image/upload/v1764410208/WhatsApp_Image_2025-11-29_at_10.21.18_vw9u5k.jpg",
+    "https://res.cloudinary.com/dvbhqaqad/image/upload/v1764410206/WhatsApp_Image_2025-11-29_at_10.21.15_1_xrrys6.jpg"
+  ]
+};
+
+// ==========================================
 
 const App: React.FC = () => {
   const [stage, setStage] = useState<AppStage | null>(null);
@@ -14,48 +36,26 @@ const App: React.FC = () => {
   const [photo, setPhoto] = useState<string | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   
-  // Custom Media State
-  const [videoUrl, setVideoUrl] = useState<string | undefined>(undefined);
-  const [audioUrl, setAudioUrl] = useState<string | undefined>(undefined);
-  const [collageUrls, setCollageUrls] = useState<string[] | undefined>(undefined);
+  // State for media
+  const [videoUrl, setVideoUrl] = useState<string>(HARDCODED_MEDIA.videoUrl);
+  const [audioUrl, setAudioUrl] = useState<string>(HARDCODED_MEDIA.audioUrl);
+  const [collageUrls, setCollageUrls] = useState<string[]>(HARDCODED_MEDIA.collagePhotos);
 
   useEffect(() => {
-    // Service Worker Prompt
+    // 1. Service Worker Prompt
     const handler = (e: any) => {
       e.preventDefault();
       setDeferredPrompt(e);
     };
     window.addEventListener('beforeinstallprompt', handler);
 
-    // Initialize DB and Check for Config
+    // 2. Load Config - DIRECTLY LOAD HARDCODED MEDIA
+    // We skip the DB check and Creator Setup entirely.
     const loadConfig = async () => {
-      try {
-        await initDB();
-        const storedVideo = await getMedia('video');
-        const storedAudio = await getMedia('audio');
-        const storedCollage = await getMedia('collage');
-
-        if (storedVideo && !Array.isArray(storedVideo)) {
-          setVideoUrl(URL.createObjectURL(storedVideo));
-          
-          if (storedAudio && !Array.isArray(storedAudio)) {
-            setAudioUrl(URL.createObjectURL(storedAudio));
-          }
-
-          if (storedCollage && Array.isArray(storedCollage)) {
-            const urls = storedCollage.map(blob => URL.createObjectURL(blob));
-            setCollageUrls(urls);
-          }
-
-          setStage(AppStage.NAME_INPUT);
-        } else {
-          setStage(AppStage.CREATOR_SETUP);
-        }
-      } catch (e) {
-        console.error("Failed to load DB", e);
-        // Fallback or error state
-        setStage(AppStage.CREATOR_SETUP);
-      }
+      // Simulate a small loading delay for smooth feel
+      setTimeout(() => {
+        setStage(AppStage.NAME_INPUT);
+      }, 1000);
     };
 
     loadConfig();
@@ -70,29 +70,6 @@ const App: React.FC = () => {
       if (outcome === 'accepted') {
         setDeferredPrompt(null);
       }
-    }
-  };
-
-  const handleCreatorComplete = async (videoBlob: Blob, audioBlob: Blob | null, collageBlobs: Blob[]) => {
-    try {
-      await saveMedia('video', videoBlob);
-      setVideoUrl(URL.createObjectURL(videoBlob));
-      
-      if (audioBlob) {
-        await saveMedia('audio', audioBlob);
-        setAudioUrl(URL.createObjectURL(audioBlob));
-      }
-
-      if (collageBlobs.length > 0) {
-        await saveMedia('collage', collageBlobs);
-        const urls = collageBlobs.map(blob => URL.createObjectURL(blob));
-        setCollageUrls(urls);
-      }
-
-      setStage(AppStage.NAME_INPUT);
-    } catch (e) {
-      console.error("Failed to save media", e);
-      alert("Failed to save media. Storage might be full.");
     }
   };
 
@@ -124,9 +101,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-black text-white font-sans">
-      {stage === AppStage.CREATOR_SETUP && (
-        <CreatorSetup onComplete={handleCreatorComplete} />
-      )}
       {stage === AppStage.NAME_INPUT && (
         <NameEntry onNameSubmit={handleNameSubmit} />
       )}
